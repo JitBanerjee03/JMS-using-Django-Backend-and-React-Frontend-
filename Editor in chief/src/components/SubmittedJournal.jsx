@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { Table, Alert, Badge, Form, Row, Col, Button, Card, Modal } from 'react-bootstrap';
-import { FaInfoCircle, FaEye, FaCheck, FaTimes, FaUserEdit, FaSearch, FaFilter, FaRedo } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { FaInfoCircle, FaEye, FaCheck, FaTimes, FaUserEdit, FaSearch, FaFilter, FaRedo, FaUserTie, FaClipboardCheck } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
 import { contextProviderDeclare } from '../store/ContextProvider';
 
 const SubmittedJournal = ({ submittedJournal }) => {
@@ -15,7 +15,8 @@ const SubmittedJournal = ({ submittedJournal }) => {
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [selectedAreaEditor, setSelectedAreaEditor] = useState('');
   const { fetchSubmittedJournal } = useContext(contextProviderDeclare);
-  
+  const navigate = useNavigate();
+
   // Format date to MM-DD format
   const formatDate = (dateString) => {
     if (!dateString) return '~';
@@ -99,7 +100,7 @@ const SubmittedJournal = ({ submittedJournal }) => {
 
   // Handle accept journal
   const handleAccept = async(journalId) => {
-    try {
+    /*try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_DJANGO_URL}/journal/mark-accepted/${journalId}/`, {
         method: "POST",
         headers: {
@@ -112,7 +113,9 @@ const SubmittedJournal = ({ submittedJournal }) => {
     } catch (err) {
       console.error("Failed to accept journal:", err);
       alert('Failed to accept journal');
-    } 
+    } */
+
+    navigate(`/recommendation/${journalId}`);
   };
 
   // Handle reject journal
@@ -155,6 +158,21 @@ const SubmittedJournal = ({ submittedJournal }) => {
   const handleAssignAreaEditor = (journalId) => {
     setSelectedJournal(journalId);
     setShowAssignModal(true);
+  };
+
+  // Handle chief editor recommendation
+  const handleChiefEditorRecommendation = (journalId) => {
+    // Add your logic for chief editor recommendation
+    //console.log(`Chief editor recommendation for journal ${journalId}`);
+    //navigate(`/chief-editor-recommendation/${journalId}`);
+    navigate(`/recommendation/${journalId}`);
+  };
+
+  // Handle final recommendation
+  const handleFinalRecommendation = (journalId) => {
+    // Add your logic for final recommendation
+    console.log(`Final recommendation for journal ${journalId}`);
+    navigate(`/final-recommendation/${journalId}`);
   };
 
   // Submit area editor assignment
@@ -378,52 +396,69 @@ const SubmittedJournal = ({ submittedJournal }) => {
                       </Badge>
                     </td>
                     <td>
-                      <Link 
-                        to={`/view-journal/${journal.id}`} 
-                        className="btn btn-sm btn-primary me-1"
-                        title="View Details"
-                      >
-                        <FaEye />
-                      </Link>
-                      
-                      <Button
-                        variant="success"
-                        size="sm"
-                        title="Accept Submission"
-                        onClick={() => handleAccept(journal.id)}
-                        className="me-1"
-                      >
-                        <FaCheck />
-                      </Button>
-                      
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        title="Reject Submission"
-                        onClick={() => handleReject(journal.id)}
-                        className="me-1"
-                      >
-                        <FaTimes />
-                      </Button>
-                      
-                      <Button
-                        variant="warning"
-                        size="sm"
-                        title="Request Revisions"
-                        onClick={() => handleRequestRevisions(journal.id)}
-                        className="me-1"
-                      >
-                        <FaRedo />
-                      </Button>
-                      
-                      <Button
-                        variant="info"
-                        size="sm"
-                        title="Assign Area Editor"
-                        onClick={() => handleAssignAreaEditor(journal.id)}
-                      >
-                        <FaUserEdit />
-                      </Button>
+                      <div className="d-flex flex-wrap gap-1">
+                        <Link 
+                          to={`/view-journal/${journal.id}`} 
+                          className="btn btn-sm btn-primary"
+                          title="View Details"
+                        >
+                          <FaEye />
+                        </Link>
+                        
+                        {/*<Button
+                          variant="success"
+                          size="sm"
+                          title="Accept Submission"
+                          onClick={() => handleAccept(journal.id)}
+                        >
+                          <FaCheck />
+                        </Button>*/}
+                        
+                        {/*<Button
+                          variant="danger"
+                          size="sm"
+                          title="Reject Submission"
+                          onClick={() => handleReject(journal.id)}
+                        >
+                          <FaTimes />
+                        </Button>*/}
+                        
+                        {/*<Button
+                          variant="warning"
+                          size="sm"
+                          title="Request Revisions"
+                          onClick={() => handleRequestRevisions(journal.id)}
+                        >
+                          <FaRedo />
+                        </Button>*/}
+                        
+                        <Button
+                          variant="info"
+                          size="sm"
+                          title="Assign Area Editor"
+                          onClick={() => handleAssignAreaEditor(journal.id)}
+                        >
+                          <FaUserEdit />
+                        </Button>
+
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          title="Chief Editor Recommendation"
+                          onClick={() => handleChiefEditorRecommendation(journal.id)}
+                        >
+                          <FaUserTie />
+                        </Button>
+
+                        <Button
+                          variant="dark"
+                          size="sm"
+                          title="Final Recommendation"
+                          onClick={() => handleFinalRecommendation(journal.id)}
+                        >
+                          <FaClipboardCheck />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))

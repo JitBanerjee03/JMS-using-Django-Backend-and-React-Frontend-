@@ -101,6 +101,7 @@ class EditorInChiefListSerializer(serializers.ModelSerializer):
             'id',
             'email',
             'full_name',
+
             'is_active',
             'is_approved',
             'institution',
@@ -207,3 +208,93 @@ class EditorInChiefTokenObtainPairSerializer(TokenObtainPairSerializer):
             # Include any additional fields you want in the response
             'institution': editor_in_chief.institution,
         }
+    
+from rest_framework import serializers
+from .models import EditorInChiefRecommendation, EditorInChiefFeedback
+
+class EditorInChiefFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EditorInChiefFeedback
+        fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at']
+
+class EditorInChiefRecommendationSerializer(serializers.ModelSerializer):
+    feedbacks = EditorInChiefFeedbackSerializer(many=True, read_only=True)
+    editor_name = serializers.CharField(source='editor_in_chief.user.get_full_name', read_only=True)
+    journal_title = serializers.CharField(source='journal.title', read_only=True)
+    
+    class Meta:
+        model = EditorInChiefRecommendation
+        fields = [
+            'id',
+            'journal',
+            'journal_title',
+            'editor_in_chief',
+            'editor_name',
+            'recommendation',
+            'decision_summary',
+            'decision_notes',
+            'decision_date',
+            'requires_review',
+            'review_deadline',
+            'is_final_decision',
+            'feedbacks'
+        ]
+        read_only_fields = ['decision_date', 'editor_in_chief']
+
+'''class CreateRecommendationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EditorInChiefRecommendation
+        fields = ['journal', 'recommendation', 'decision_summary', 'requires_review', 'review_deadline']
+        
+    def validate(self, data):
+        journal = data.get('journal')
+        eic = self.context['request'].user.editorinchief
+
+        # Check if recommendation already exists
+        if EditorInChiefRecommendation.objects.filter(journal=journal, editor_in_chief=eic).exists():
+            raise serializers.ValidationError("You've already made a recommendation for this journal.")
+            
+        return data'''
+
+class CreateRecommendationSerializer(serializers.ModelSerializer):
+    editor_in_chief = serializers.PrimaryKeyRelatedField(
+        queryset=EditorInChief.objects.all(),
+        required=True
+    )
+    
+    class Meta:
+        model = EditorInChiefRecommendation
+        fields = [
+            'journal', 
+            'editor_in_chief',  # Now required in request data
+            'recommendation', 
+            'decision_summary', 
+            'requires_review', 
+            'review_deadline'
+        ]
+        
+    def validate(self, data):
+        journal = data.get('journal')
+        editor_in_chief = data.get('editor_in_chief')  # Get from input data instead of request.user
+
+        # Check for existing recommendation
+        if EditorInChiefRecommendation.objects.filter(
+            journal=journal, 
+            editor_in_chief=editor_in_chief
+        ).exists():
+            raise serializers.ValidationError(
+                "This editor has already made a recommendation for this journal."
+            )
+            
+        return data
+
+class UpdateRecommendationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EditorInChiefRecommendation
+        fields = ['recommendation', 'decision_summary', 'decision_notes', 'is_final_decision']
+        
+    def validate_is_final_decision(self, value):
+        if value and not self.instance.decision_summary:
+            raise serializers.ValidationError("Cannot mark as final decision without a summary.")
+        return value

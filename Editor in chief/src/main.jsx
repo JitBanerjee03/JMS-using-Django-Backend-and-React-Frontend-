@@ -12,6 +12,7 @@ import SubmittedArticle from './pages/SubmittedArticle.jsx';
 import JournalView from './pages/JournalView.jsx';
 import AreaEditors from './pages/AreaEditors.jsx';
 import AreaEditorProfile from './pages/AreaEditorProfile.jsx';
+import ChiefEditorRecommendation from './pages/ChiefEditorRecommendation.jsx'
 
 const router=createBrowserRouter([
   {
@@ -25,7 +26,8 @@ const router=createBrowserRouter([
       {path:'/submitted-article',element:<SubmittedArticle/>},  
       {path:'/view-journal/:journalId',element:<JournalView/>},  
       {path:'/area-editor',element:<AreaEditors/>},
-      {path:'/area-editor/:areaEditorId',element:<AreaEditorProfile/>}
+      {path:'/area-editor/:areaEditorId',element:<AreaEditorProfile/>},
+      {path:'/recommendation/:journalId',element:<ChiefEditorRecommendation/>},
     ]
   }
 ]);

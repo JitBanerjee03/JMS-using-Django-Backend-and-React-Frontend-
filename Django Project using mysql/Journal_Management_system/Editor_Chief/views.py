@@ -234,3 +234,100 @@ class ValidateEditorInChiefTokenView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from .models import EditorInChiefRecommendation
+
+from .serializers import (
+    EditorInChiefRecommendationSerializer,
+    CreateRecommendationSerializer,
+    UpdateRecommendationSerializer
+)
+
+'''class EditorInChiefRecommendationListView(generics.ListAPIView):
+    serializer_class = EditorInChiefRecommendationSerializer
+    permission_classes = []
+    
+    def get_queryset(self):
+        return EditorInChiefRecommendation.objects.filter(
+            editor_in_chief=self.request.user.editorinchief
+        ).select_related('journal', 'editor_in_chief__user')'''
+
+class EditorInChiefRecommendationListView(generics.ListAPIView):
+    serializer_class = EditorInChiefRecommendationSerializer
+    permission_classes = []  # No authentication
+    queryset = EditorInChiefRecommendation.objects.all().select_related(
+        'journal', 'editor_in_chief__user'
+    )
+
+    # Remove get_queryset (no user filtering)
+
+class CreateRecommendationView(generics.CreateAPIView):
+    serializer_class = CreateRecommendationSerializer
+    permission_classes = []
+    
+    '''def perform_create(self, serializer):
+        serializer.save(editor_in_chief=self.request.user.editorinchief)'''
+
+class RecommendationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = EditorInChiefRecommendation.objects.all()
+    permission_classes = []
+    
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UpdateRecommendationSerializer
+        return EditorInChiefRecommendationSerializer
+        
+    def get_queryset(self):
+        return self.queryset.filter(editor_in_chief=self.request.user.editorinchief)
+
+'''class FinalizeRecommendationView(generics.UpdateAPIView):
+    queryset = EditorInChiefRecommendation.objects.all()
+    serializer_class = UpdateRecommendationSerializer
+    permission_classes = []
+    
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        
+        if not instance.is_final_decision and serializer.validated_data.get('is_final_decision', False):
+            # Additional logic when finalizing decision
+            pass
+            
+        self.perform_update(serializer)
+        return Response(serializer.data)'''
+
+class FinalizeRecommendationView(APIView):
+    def post(self, request, journal_id):
+        try:
+            # Get editor_in_chief_id from request body
+            editor_in_chief_id = request.data.get('editor_in_chief_id')
+            if not editor_in_chief_id:
+                return Response(
+                    {"error": "editor_in_chief_id is required"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Get the specific recommendation for this journal and editor
+            recommendation = EditorInChiefRecommendation.objects.get(
+                journal_id=journal_id,
+                editor_in_chief_id=editor_in_chief_id
+            )
+        except EditorInChiefRecommendation.DoesNotExist:
+            return Response(
+                {"error": "Recommendation not found for this journal and editor"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = UpdateRecommendationSerializer(
+            recommendation, 
+            data=request.data, 
+            partial=True
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
